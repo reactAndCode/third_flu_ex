@@ -2,6 +2,42 @@
 
 이 프로젝트의 주요 변경사항을 기록합니다.
 
+## [1.4.0] - 2024-11-20
+
+### Added
+- 운동 사진 업로드 기능:
+  - 운동 수정 화면에서 최대 2장의 사진 업로드 가능
+  - Supabase Storage 연동 (bucket: `my-real-estate`, folder: `myUp33`)
+  - 이미지 선택 시 실시간 미리보기
+  - 업로드 중 로딩 인디케이터 표시
+- 운동 상세 화면 사진 표시:
+  - 업로드된 운동 사진을 상세 화면에서 확인 가능
+  - 2장의 사진을 나란히 표시
+  - 둥근 모서리 디자인 적용
+- 사용자 정보 표시:
+  - AppBar에 로그인한 사용자 이메일의 처음 5글자 표시
+  - "My Awesome" 타이틀 아래에 작은 회색 글씨로 표시
+
+### Changed
+- 데이터베이스 스키마 업데이트:
+  - `photo_url_1` 컬럼 추가 (TEXT 타입)
+  - `photo_url_2` 컬럼 추가 (TEXT 타입)
+- Workout 모델 확장:
+  - `photoUrl1`, `photoUrl2` 필드 추가
+  - `toMap()`, `fromMap()`, `copyWith()` 메서드 업데이트
+- 수정 다이얼로그 개선:
+  - `StatefulBuilder` 사용으로 이미지 선택 시 UI 즉시 업데이트
+  - 2개의 사진 선택 버튼 추가
+  - 선택된 이미지 또는 기존 이미지 미리보기
+
+### Technical Details
+- 새로운 패키지:
+  - `image_picker: ^1.0.7` - 갤러리에서 이미지 선택
+- 새로운 서비스 메서드:
+  - `SupabaseService.uploadWorkoutImage()` - Supabase Storage에 이미지 업로드
+- 파일 명명 규칙: `{workoutId}_{timestamp}.jpg`
+- 이미지 데이터 타입: `Uint8List` (dart:typed_data)
+
 ## [1.1.0] - 2024-11-20
 
 ### Added
