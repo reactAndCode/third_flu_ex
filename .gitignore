@@ -18,6 +18,7 @@ migrate_working_dir/
 
 # Markdown files
 *.md
+!CLAUDE.md
 
 # IntelliJ related
 *.iml
