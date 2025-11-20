@@ -23,12 +23,32 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.all(12.0),
           child: Icon(Icons.favorite, size: 28, color: Colors.pink),
         ),
-        title: const Text(
-          'My Awesome',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
+        title: Consumer<AuthProvider>(
+          builder: (context, authProvider, child) {
+            final email = authProvider.user?.email ?? '';
+            final displayText = email.length >= 5 ? email.substring(0, 5) : email;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'My Awesome',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (displayText.isNotEmpty)
+                  Text(
+                    displayText,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
         actions: [
           IconButton(

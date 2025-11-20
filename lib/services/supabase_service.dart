@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/workout.dart';
 
@@ -94,5 +95,26 @@ class SupabaseService {
         .count();
 
     return response.count;
+  }
+
+  // Upload image to Supabase Storage
+  Future<String?> uploadWorkoutImage(String filePath, Uint8List fileBytes, String workoutId) async {
+    try {
+      final fileName = '${workoutId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final path = 'myUp33/$fileName';
+
+      await _client.storage
+          .from('my-real-estate')
+          .uploadBinary(path, fileBytes);
+
+      final publicUrl = _client.storage
+          .from('my-real-estate')
+          .getPublicUrl(path);
+
+      return publicUrl;
+    } catch (e) {
+      print('Error uploading image: $e');
+      return null;
+    }
   }
 }

@@ -8,6 +8,8 @@ class Workout {
   final String bodyPart;
   final DateTime date;
   final String? notes;
+  final String? photoUrl1;
+  final String? photoUrl2;
 
   Workout({
     this.id,
@@ -19,6 +21,8 @@ class Workout {
     required this.bodyPart,
     required this.date,
     this.notes,
+    this.photoUrl1,
+    this.photoUrl2,
   });
 
   // Convert a Workout into a Map for Supabase operations
@@ -33,6 +37,8 @@ class Workout {
       'body_part': bodyPart,
       'workout_date': _formatDate(date),
       if (notes != null) 'notes': notes,
+      if (photoUrl1 != null) 'photo_url_1': photoUrl1,
+      if (photoUrl2 != null) 'photo_url_2': photoUrl2,
     };
   }
 
@@ -48,6 +54,8 @@ class Workout {
       bodyPart: map['body_part'] ?? '',
       date: _parseDate(map['workout_date']),
       notes: map['notes'],
+      photoUrl1: map['photo_url_1'],
+      photoUrl2: map['photo_url_2'],
     );
   }
 
@@ -79,6 +87,8 @@ class Workout {
     String? bodyPart,
     DateTime? date,
     String? notes,
+    String? photoUrl1,
+    String? photoUrl2,
   }) {
     return Workout(
       id: id ?? this.id,
@@ -90,6 +100,8 @@ class Workout {
       bodyPart: bodyPart ?? this.bodyPart,
       date: date ?? this.date,
       notes: notes ?? this.notes,
+      photoUrl1: photoUrl1 ?? this.photoUrl1,
+      photoUrl2: photoUrl2 ?? this.photoUrl2,
     );
   }
 }

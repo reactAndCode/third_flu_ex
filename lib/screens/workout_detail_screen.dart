@@ -1,8 +1,11 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/workout.dart';
 import '../providers/workout_provider.dart';
+import '../services/supabase_service.dart';
 
 class WorkoutDetailScreen extends StatefulWidget {
   final Workout workout;
@@ -163,6 +166,73 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
               ),
             ),
 
+            const SizedBox(height: 16),
+
+            // Photos Section
+            if (widget.workout.photoUrl1 != null || widget.workout.photoUrl2 != null)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.photo_library, size: 20, color: Colors.grey),
+                        SizedBox(width: 8),
+                        Text(
+                          '운동 사진',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        if (widget.workout.photoUrl1 != null)
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                widget.workout.photoUrl1!,
+                                fit: BoxFit.cover,
+                                height: 150,
+                              ),
+                            ),
+                          ),
+                        if (widget.workout.photoUrl1 != null && widget.workout.photoUrl2 != null)
+                          const SizedBox(width: 8),
+                        if (widget.workout.photoUrl2 != null)
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                widget.workout.photoUrl2!,
+                                fit: BoxFit.cover,
+                                height: 150,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
             const SizedBox(height: 24),
           ],
         ),
@@ -200,102 +270,190 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     final bodyPartController = TextEditingController(text: widget.workout.bodyPart);
     final notesController = TextEditingController(text: widget.workout.notes ?? '');
 
+    Uint8List? selectedImage1;
+    Uint8List? selectedImage2;
+    String? photoUrl1 = widget.workout.photoUrl1;
+    String? photoUrl2 = widget.workout.photoUrl2;
+
+    final picker = ImagePicker();
+
     return showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('운동 수정'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: '운동명',
-                  border: OutlineInputBorder(),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('운동 수정'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: '운동명',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: weightController,
-                decoration: const InputDecoration(
-                  labelText: '중량',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: weightController,
+                  decoration: const InputDecoration(
+                    labelText: '중량',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: repsController,
-                decoration: const InputDecoration(
-                  labelText: '횟수',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: repsController,
+                  decoration: const InputDecoration(
+                    labelText: '횟수',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
                 ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: setsController,
-                decoration: const InputDecoration(
-                  labelText: '세트',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: setsController,
+                  decoration: const InputDecoration(
+                    labelText: '세트',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
                 ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: bodyPartController,
-                decoration: const InputDecoration(
-                  labelText: '운동 부위',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: bodyPartController,
+                  decoration: const InputDecoration(
+                    labelText: '운동 부위',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: notesController,
-                decoration: const InputDecoration(
-                  labelText: '운동방법상세',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: notesController,
+                  decoration: const InputDecoration(
+                    labelText: '운동방법상세',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
                 ),
-                maxLines: 3,
-              ),
-            ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          final image = await picker.pickImage(source: ImageSource.gallery);
+                          if (image != null) {
+                            final bytes = await image.readAsBytes();
+                            setState(() {
+                              selectedImage1 = bytes;
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.photo),
+                        label: Text(selectedImage1 != null || photoUrl1 != null ? '사진1 변경' : '사진1 추가'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          final image = await picker.pickImage(source: ImageSource.gallery);
+                          if (image != null) {
+                            final bytes = await image.readAsBytes();
+                            setState(() {
+                              selectedImage2 = bytes;
+                            });
+                          }
+                        },
+                        icon: const Icon(Icons.photo),
+                        label: Text(selectedImage2 != null || photoUrl2 != null ? '사진2 변경' : '사진2 추가'),
+                      ),
+                    ),
+                  ],
+                ),
+                if (selectedImage1 != null || photoUrl1 != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: selectedImage1 != null
+                        ? Image.memory(selectedImage1!, height: 100)
+                        : Image.network(photoUrl1!, height: 100),
+                  ),
+                if (selectedImage2 != null || photoUrl2 != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: selectedImage2 != null
+                        ? Image.memory(selectedImage2!, height: 100)
+                        : Image.network(photoUrl2!, height: 100),
+                  ),
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameController.text.isEmpty) return;
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('취소'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameController.text.isEmpty) return;
 
-              final updatedWorkout = Workout(
-                id: widget.workout.id,
-                userId: widget.workout.userId,
-                name: nameController.text,
-                weight: weightController.text,
-                reps: repsController.text,
-                sets: setsController.text,
-                bodyPart: bodyPartController.text,
-                notes: notesController.text,
-                date: widget.workout.date,
-              );
+                // Show loading
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const Center(child: CircularProgressIndicator()),
+                );
 
-              if (context.mounted) {
-                await context.read<WorkoutProvider>().updateWorkout(updatedWorkout);
+                final supabaseService = SupabaseService();
+
+                // Upload images if selected
+                if (selectedImage1 != null) {
+                  photoUrl1 = await supabaseService.uploadWorkoutImage(
+                    'photo1',
+                    selectedImage1!,
+                    widget.workout.id!,
+                  );
+                }
+
+                if (selectedImage2 != null) {
+                  photoUrl2 = await supabaseService.uploadWorkoutImage(
+                    'photo2',
+                    selectedImage2!,
+                    widget.workout.id!,
+                  );
+                }
+
+                final updatedWorkout = Workout(
+                  id: widget.workout.id,
+                  userId: widget.workout.userId,
+                  name: nameController.text,
+                  weight: weightController.text,
+                  reps: repsController.text,
+                  sets: setsController.text,
+                  bodyPart: bodyPartController.text,
+                  notes: notesController.text,
+                  date: widget.workout.date,
+                  photoUrl1: photoUrl1,
+                  photoUrl2: photoUrl2,
+                );
 
                 if (context.mounted) {
-                  Navigator.pop(context); // Close dialog
+                  await context.read<WorkoutProvider>().updateWorkout(updatedWorkout);
+
                   if (context.mounted) {
-                    Navigator.pop(context); // Go back to home screen
+                    Navigator.pop(context); // Close loading
+                    Navigator.pop(context); // Close dialog
+                    if (context.mounted) {
+                      Navigator.pop(context); // Go back to home screen
+                    }
                   }
                 }
-              }
-            },
-            child: const Text('저장'),
-          ),
-        ],
+              },
+              child: const Text('저장'),
+            ),
+          ],
+        ),
       ),
     );
   }
