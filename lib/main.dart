@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'providers/auth_provider.dart';
@@ -7,16 +6,23 @@ import 'providers/workout_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 
+const String supabaseUrl = String.fromEnvironment(
+  'SUPABASE_URL',
+  defaultValue: 'https://uizoxtnvqisiicvcxgty.supabase.co',
+);
+
+const String supabaseAnonKey = String.fromEnvironment(
+  'SUPABASE_ANON_KEY',
+  defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpem94dG52cWlzaWljdmN4Z3R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIxMzYzNDAsImV4cCI6MjA3NzcxMjM0MH0.DAfvBKVwXkdv7UX0G25gNJG8shkdopHFuRkcvTTuGtM',
+);
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables
-  await dotenv.load(fileName: '.env.local');
-
   // Initialize Supabase
   await Supabase.initialize(
-    url: dotenv.env['NEXT_PUBLIC_SUPABASE_URL']!,
-    anonKey: dotenv.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']!,
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
   );
 
   runApp(const MyApp());
