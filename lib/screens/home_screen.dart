@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 8),
           const Text(
-            '오늘의 운동을 기록하고 관리하세요',
+            '오늘 운동은 내일 그리고 내년 근육 상실 예방!!',
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey,

@@ -133,6 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                       return null;
                     },
+                    onFieldSubmitted: (_) => _handleLogin(),
                   ),
                   const SizedBox(height: 24),
                   Consumer<AuthProvider>(
