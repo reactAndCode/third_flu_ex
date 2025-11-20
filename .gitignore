@@ -20,6 +20,7 @@ migrate_working_dir/
 *.md
 !CLAUDE.md
 !CHANGELOG.md
+!documents/*.md
 
 # IntelliJ related
 *.iml
