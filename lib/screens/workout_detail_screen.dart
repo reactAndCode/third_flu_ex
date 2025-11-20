@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../models/workout.dart';
+import '../providers/workout_provider.dart';
 
-class WorkoutDetailScreen extends StatelessWidget {
+class WorkoutDetailScreen extends StatefulWidget {
   final Workout workout;
 
   const WorkoutDetailScreen({
@@ -11,11 +13,16 @@ class WorkoutDetailScreen extends StatelessWidget {
   });
 
   @override
+  State<WorkoutDetailScreen> createState() => _WorkoutDetailScreenState();
+}
+
+class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
+  @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('yyyy년 MM월 dd일');
-    final formattedDate = dateFormat.format(workout.date);
+    final formattedDate = dateFormat.format(widget.workout.date);
     final weekdays = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'];
-    final weekday = weekdays[workout.date.weekday - 1];
+    final weekday = weekdays[widget.workout.date.weekday - 1];
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -31,6 +38,13 @@ class WorkoutDetailScreen extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () => _showEditWorkoutDialog(context),
+            tooltip: '수정',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -48,7 +62,7 @@ class WorkoutDetailScreen extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          workout.name,
+                          widget.workout.name,
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -88,13 +102,13 @@ class WorkoutDetailScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _buildInfoRow('운동 부위', workout.bodyPart),
+                  _buildInfoRow('운동 부위', widget.workout.bodyPart),
                   const Divider(height: 24),
-                  _buildInfoRow('중량', workout.weight),
+                  _buildInfoRow('중량', widget.workout.weight),
                   const Divider(height: 24),
-                  _buildInfoRow('횟수', workout.reps),
+                  _buildInfoRow('횟수', widget.workout.reps),
                   const Divider(height: 24),
-                  _buildInfoRow('세트', workout.sets),
+                  _buildInfoRow('세트', widget.workout.sets),
                 ],
               ),
             ),
@@ -134,12 +148,12 @@ class WorkoutDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    workout.notes?.isNotEmpty == true
-                        ? workout.notes!
+                    widget.workout.notes?.isNotEmpty == true
+                        ? widget.workout.notes!
                         : '등록된 운동 방법이 없습니다.',
                     style: TextStyle(
                       fontSize: 14,
-                      color: workout.notes?.isNotEmpty == true
+                      color: widget.workout.notes?.isNotEmpty == true
                           ? Colors.black87
                           : Colors.grey,
                       height: 1.5,
@@ -175,6 +189,114 @@ class WorkoutDetailScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _showEditWorkoutDialog(BuildContext context) async {
+    final nameController = TextEditingController(text: widget.workout.name);
+    final weightController = TextEditingController(text: widget.workout.weight);
+    final repsController = TextEditingController(text: widget.workout.reps);
+    final setsController = TextEditingController(text: widget.workout.sets);
+    final bodyPartController = TextEditingController(text: widget.workout.bodyPart);
+    final notesController = TextEditingController(text: widget.workout.notes ?? '');
+
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('운동 수정'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: '운동명',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: weightController,
+                decoration: const InputDecoration(
+                  labelText: '중량',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: repsController,
+                decoration: const InputDecoration(
+                  labelText: '횟수',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: setsController,
+                decoration: const InputDecoration(
+                  labelText: '세트',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: bodyPartController,
+                decoration: const InputDecoration(
+                  labelText: '운동 부위',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: notesController,
+                decoration: const InputDecoration(
+                  labelText: '운동방법상세',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.isEmpty) return;
+
+              final updatedWorkout = Workout(
+                id: widget.workout.id,
+                userId: widget.workout.userId,
+                name: nameController.text,
+                weight: weightController.text,
+                reps: repsController.text,
+                sets: setsController.text,
+                bodyPart: bodyPartController.text,
+                notes: notesController.text,
+                date: widget.workout.date,
+              );
+
+              if (context.mounted) {
+                await context.read<WorkoutProvider>().updateWorkout(updatedWorkout);
+
+                if (context.mounted) {
+                  Navigator.pop(context); // Close dialog
+                  if (context.mounted) {
+                    Navigator.pop(context); // Go back to home screen
+                  }
+                }
+              }
+            },
+            child: const Text('저장'),
+          ),
+        ],
+      ),
     );
   }
 }
