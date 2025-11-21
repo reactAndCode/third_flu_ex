@@ -100,7 +100,19 @@ class SupabaseService {
   // Upload image to Supabase Storage
   Future<String?> uploadWorkoutImage(String filePath, Uint8List fileBytes, String workoutId) async {
     try {
-      final fileName = '${workoutId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final now = DateTime.now();
+      final dateTimeStr = '${now.year.toString().padLeft(4, '0')}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}';
+      
+      String sequence = 'a';
+      if (filePath == 'photo1') {
+        sequence = 'a';
+      } else if (filePath == 'photo2') {
+        sequence = 'b';
+      } else if (filePath == 'photo3') {
+        sequence = 'c';
+      }
+
+      final fileName = '${dateTimeStr}_$sequence.png';
       final path = 'myUp33/$fileName';
 
       await _client.storage

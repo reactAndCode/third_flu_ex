@@ -209,8 +209,9 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
                                 widget.workout.photoUrl1!,
-                                fit: BoxFit.cover,
-                                height: 150,
+                                fit: BoxFit.contain,
+                                width: double.infinity,
+                                height: 200,
                               ),
                             ),
                           ),
@@ -222,8 +223,9 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
                                 widget.workout.photoUrl2!,
-                                fit: BoxFit.cover,
-                                height: 150,
+                                fit: BoxFit.contain,
+                                width: double.infinity,
+                                height: 200,
                               ),
                             ),
                           ),

@@ -14,6 +14,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 1;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,48 +58,87 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Consumer<WorkoutProvider>(
-        builder: (context, provider, child) {
-          return Column(
-            children: [
-              _buildHeader(provider),
-              _buildDateNavigation(provider),
-              Expanded(
-                child: provider.isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : provider.workouts.isEmpty
-                        ? const Center(
-                            child: Text(
-                              '운동 기록이 없습니다',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          )
-                        : _buildWorkoutList(provider),
-              ),
-            ],
-          );
+      body: _buildBody(),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
         },
+        backgroundColor: const Color(0xFF0F1D0F),
+        selectedItemColor: const Color(0xFF00E676),
+        unselectedItemColor: Colors.white70,
+        showUnselectedLabels: true,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: '홈'),
+          BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: '운동'),
+          BottomNavigationBarItem(icon: Icon(Icons.equalizer), label: '대시보드'),
+          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: '채팅'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'My'),
+        ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddWorkoutDialog(context),
-        backgroundColor: Colors.black,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          '한개',
-          style: TextStyle(color: Colors.white),
-        ),
-      ),
+      floatingActionButton: _currentIndex == 1
+          ? FloatingActionButton.extended(
+              onPressed: () => _showAddWorkoutDialog(context),
+              backgroundColor: Colors.black,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                '한개',
+                style: TextStyle(color: Colors.white),
+              ),
+            )
+          : null,
     );
+  }
+
+  Widget _buildBody() {
+    switch (_currentIndex) {
+      case 0:
+        return _buildPlaceholder('홈');
+      case 1:
+        return Consumer<WorkoutProvider>(
+          builder: (context, provider, child) {
+            return Column(
+              children: [
+                _buildHeader(provider),
+                _buildDateNavigation(provider),
+                Expanded(
+                  child: provider.isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : provider.workouts.isEmpty
+                          ? const Center(
+                              child: Text(
+                                '운동 기록이 없습니다',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            )
+                          : _buildWorkoutList(provider),
+                ),
+              ],
+            );
+          },
+        );
+      case 2:
+        return _buildPlaceholder('대시보드');
+      case 3:
+        return _buildPlaceholder('채팅');
+      case 4:
+        return _buildPlaceholder('My');
+      default:
+        return _buildPlaceholder('홈');
+    }
   }
 
   Widget _buildHeader(WorkoutProvider provider) {
     return Container(
       padding: const EdgeInsets.all(20),
       color: Colors.white,
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
@@ -107,17 +147,17 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(width: 8),
               Text(
                 '나의 운동 내역',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8),
+          Text(
             '오늘 운동은 내일 그리고 내년 근육 상실 예방!!',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               color: Colors.grey,
             ),
@@ -212,6 +252,18 @@ class _HomeScreenState extends State<HomeScreen> {
             onDelete: () => _deleteWorkout(context, provider.workouts[index].id!),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder(String title) {
+    return Container(
+      color: Colors.grey[50],
+      child: Center(
+        child: Text(
+          title,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+        ),
       ),
     );
   }

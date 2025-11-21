@@ -2,6 +2,47 @@
 
 이 프로젝트의 주요 변경사항을 기록합니다.
 
+## [1.5.0] - 2024-11-21 (로컬 변경사항 - 미배포)
+
+### Added
+- 하단 네비게이션 바 (Bottom Navigation Bar):
+  - 5개 메뉴: 홈, 운동, 대시보드, 채팅, My
+  - 다크 그린 배경 (`#0F1D0F`)
+  - 네온 그린 선택 색상 (`#00E676`)
+  - 운동 탭에서만 플로팅 액션 버튼(+한개) 표시
+  - 각 탭별 플레이스홀더 화면 구현
+- 새로운 이미지 리소스:
+  - `cuteCat_tread2.png` - 귀여운 고양이 러닝머신 이미지
+  - `cute_cat_treadmill.png` - 고양이 운동 이미지
+  - `bottomMemnu.png` - 하단 메뉴 참고 이미지
+
+### Changed
+- 운동 사진 표시 개선:
+  - 이미지 fit 모드: `BoxFit.cover` → `BoxFit.contain`
+  - 이미지 높이: 150px → 200px
+  - 이미지 너비: `double.infinity`로 설정하여 전체 너비 사용
+  - 비율 유지하면서 잘림 없이 표시
+- 이미지 파일명 규칙 개선:
+  - 이전: `{workoutId}_{timestamp}.jpg`
+  - 현재: `{YYYYMMDDHHmmss}_{sequence}.png`
+  - 시퀀스: photo1=a, photo2=b, photo3=c
+  - 예시: `20241121143025_a.png`
+- APK 파일명 변경:
+  - `my-awesome-workout-v1.x.apk` → `workouts_v1_x.apk`
+- 홈 화면 구조 개선:
+  - `_buildBody()` 메서드로 탭별 컨텐츠 분리
+  - 운동 목록은 인덱스 1(운동 탭)에서만 표시
+
+### Technical Details
+- Bottom Navigation Bar: `BottomNavigationBarType.fixed`
+- 현재 탭 인덱스: `_currentIndex` 상태로 관리
+- 조건부 FAB 렌더링: `_currentIndex == 1`일 때만 표시
+- 각 탭 전환 시 `setState()`로 UI 업데이트
+
+### Notes
+- 이 버전은 로컬에서만 변경되었으며 아직 GitHub에 푸시되지 않음
+- 빌드 및 배포 필요
+
 ## [1.4.0] - 2024-11-20
 
 ### Added
