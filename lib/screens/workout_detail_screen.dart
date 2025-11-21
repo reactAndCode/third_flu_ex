@@ -344,12 +344,31 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () async {
-                          final image = await picker.pickImage(source: ImageSource.gallery);
-                          if (image != null) {
-                            final bytes = await image.readAsBytes();
-                            setState(() {
-                              selectedImage1 = bytes;
-                            });
+                          try {
+                            // 웹과 모바일 모두 지원
+                            final image = await picker.pickImage(
+                              source: ImageSource.gallery,
+                              maxWidth: 1920,
+                              maxHeight: 1080,
+                              imageQuality: 85,
+                            );
+
+                            if (image != null) {
+                              final bytes = await image.readAsBytes();
+                              setState(() {
+                                selectedImage1 = bytes;
+                              });
+                            }
+                          } catch (e) {
+                            debugPrint('이미지 선택 오류: $e');
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('이미지 선택 실패: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
                           }
                         },
                         icon: const Icon(Icons.photo),
@@ -360,12 +379,31 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () async {
-                          final image = await picker.pickImage(source: ImageSource.gallery);
-                          if (image != null) {
-                            final bytes = await image.readAsBytes();
-                            setState(() {
-                              selectedImage2 = bytes;
-                            });
+                          try {
+                            // 웹과 모바일 모두 지원
+                            final image = await picker.pickImage(
+                              source: ImageSource.gallery,
+                              maxWidth: 1920,
+                              maxHeight: 1080,
+                              imageQuality: 85,
+                            );
+
+                            if (image != null) {
+                              final bytes = await image.readAsBytes();
+                              setState(() {
+                                selectedImage2 = bytes;
+                              });
+                            }
+                          } catch (e) {
+                            debugPrint('이미지 선택 오류: $e');
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('이미지 선택 실패: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
                           }
                         },
                         icon: const Icon(Icons.photo),
