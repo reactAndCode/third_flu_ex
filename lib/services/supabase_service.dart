@@ -58,6 +58,23 @@ class SupabaseService {
         .toList();
   }
 
+  // Read all workouts in a date range
+  Future<List<Workout>> getWorkoutsByDateRange(DateTime startDate, DateTime endDate) async {
+    final startDateStr = '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
+    final endDateStr = '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
+
+    final response = await _client
+        .from('workouts')
+        .select()
+        .gte('workout_date', startDateStr)
+        .lte('workout_date', endDateStr)
+        .order('workout_date', ascending: false);
+
+    return response
+        .map((item) => Workout.fromMap(item))
+        .toList();
+  }
+
   // Read all workouts
   Future<List<Workout>> getAllWorkouts() async {
     final response = await _client.from('workouts').select().order('workout_date', ascending: false);

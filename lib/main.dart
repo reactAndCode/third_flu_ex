@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'providers/auth_provider.dart';
 import 'providers/workout_provider.dart';
 import 'screens/home_screen.dart';
+import 'screens/new_home_screen.dart';
 import 'screens/login_screen.dart';
 
 const String supabaseUrl = String.fromEnvironment(
@@ -68,7 +69,7 @@ class AuthWrapper extends StatelessWidget {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             context.read<WorkoutProvider>().loadWorkouts();
           });
-          return const HomeScreen();
+          return const NewHomeScreen();
         } else {
           return const LoginScreen();
         }
