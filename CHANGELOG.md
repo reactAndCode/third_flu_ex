@@ -2,7 +2,7 @@
 
 이 프로젝트의 주요 변경사항을 기록합니다.
 
-## [1.5.0] - 2024-11-21 (로컬 변경사항 - 미배포)
+## [1.5.0] - 2024-11-21
 
 ### Added
 - 하단 네비게이션 바 (Bottom Navigation Bar):
@@ -39,9 +39,10 @@
 - 조건부 FAB 렌더링: `_currentIndex == 1`일 때만 표시
 - 각 탭 전환 시 `setState()`로 UI 업데이트
 
-### Notes
-- 이 버전은 로컬에서만 변경되었으며 아직 GitHub에 푸시되지 않음
-- 빌드 및 배포 필요
+### Deployment
+- Commit: cb6ee89
+- GitHub: ✅ Pushed
+- Vercel: ✅ Auto-deployed
 
 ## [1.4.0] - 2024-11-20
 
