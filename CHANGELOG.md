@@ -2,6 +2,73 @@
 
 이 프로젝트의 주요 변경사항을 기록합니다.
 
+## [1.6.0] - 2024-11-22
+
+### Added
+- 새로운 홈 화면 구조 (`new_home_screen.dart`):
+  - 5개 탭 구조: 홈, 운동, 대시보드, 채팅, My
+  - **홈 탭**:
+    - 월간 운동 통계 카드 (총 운동일수, 총 운동시간, 총 칼로리)
+    - 운동 관련 명언 20개 랜덤 표시
+    - 운동 종류별 필터링 (전체, 가슴, 등, 하체, 어깨, 팔, 복근, 코어, 유산소)
+    - 검색 기능 (운동명 검색)
+    - 운동 목록 카드 뷰 (운동 시간, 칼로리 표시)
+  - **운동 탭**: 기존 운동 목록 화면
+  - **대시보드 탭**: 차트 및 통계 화면
+  - **채팅 탭**: "구현중..." 메시지
+  - **My 탭**: "구현중..." 메시지
+
+- 대시보드 화면 구현 (`dashboard_screen.dart`):
+  - **요일별 운동시간 차트**: 최근 7일간 요일별 운동시간을 막대 차트로 표시
+  - **운동종류별 비중 차트**: 이번 달 운동 종류별 비율을 도넛 차트로 표시
+  - **체중 및 BMI 변화 차트**: 최근 7일간 체중과 BMI 변화를 라인 차트로 표시
+  - Pull to Refresh 기능
+
+- 신체 측정 데이터 모델 (`body_measurement.dart`):
+  - 체중, 키, BMI, 측정일, 메모 필드
+  - BMI 자동 계산 기능
+  - Supabase 연동 메서드 (toMap, fromMap)
+
+- WorkoutProvider 확장:
+  - `getMonthlyStats()`: 월간 운동 통계 (운동일수, 총 시간, 총 칼로리)
+  - `getMonthlyWorkouts()`: 이번 달 전체 운동 데이터 조회
+  - `getDashboardData()`: 대시보드 차트용 데이터 (요일별 시간, 운동 종류별 비중)
+
+- SupabaseService 확장:
+  - `getBodyMeasurements()`: 신체 측정 데이터 조회
+  - `getBodyMeasurementsByDateRange()`: 날짜 범위별 조회
+  - `getLatestBodyMeasurement()`: 최신 측정 데이터 조회
+  - `insertBodyMeasurement()`: 신체 측정 데이터 추가
+  - `updateBodyMeasurement()`: 수정
+  - `deleteBodyMeasurement()`: 삭제
+
+### Changed
+- 하단 네비게이션 바 구조 개선:
+  - 각 탭별로 독립적인 화면 제공
+  - 운동 탭에서만 플로팅 액션 버튼 표시
+- 운동 시간 및 칼로리 계산:
+  - 운동당 시간: 8, 9, 10분 중 랜덤
+  - 운동당 칼로리: 95, 100, 105 중 랜덤
+  - hashCode 기반으로 일관성 유지
+
+### Technical Details
+- 새로운 패키지:
+  - `fl_chart: ^0.65.0` - 차트 라이브러리
+- 새로운 모델:
+  - `BodyMeasurement` - 신체 측정 데이터 모델
+- 차트 타입:
+  - `BarChart` - 요일별 운동시간
+  - `PieChart` - 운동종류별 비중 (도넛형)
+  - `LineChart` - 체중/BMI 변화 추이
+- 데이터베이스 테이블:
+  - `body_measurements` (id, user_id, measurement_date, weight, height, bmi, notes, created_at)
+
+### Notes
+- 체중 데이터가 없을 때는 샘플 데이터 표시
+- 대시보드에서 "My 탭에서 체중을 기록해보세요" 안내 메시지
+- 최근 7일간 데이터를 기반으로 차트 생성
+- 운동 명언은 매번 랜덤으로 표시
+
 ## [1.5.0] - 2024-11-21
 
 ### Added

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/workout.dart';
+import '../models/body_measurement.dart';
 
 class SupabaseService {
   static final SupabaseService _instance = SupabaseService._internal();
@@ -119,7 +120,7 @@ class SupabaseService {
     try {
       final now = DateTime.now();
       final dateTimeStr = '${now.year.toString().padLeft(4, '0')}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}';
-      
+
       String sequence = 'a';
       if (filePath == 'photo1') {
         sequence = 'a';
@@ -145,5 +146,88 @@ class SupabaseService {
       print('Error uploading image: $e');
       return null;
     }
+  }
+
+  // Body Measurement CRUD methods
+
+  // Create
+  Future<BodyMeasurement> insertBodyMeasurement(BodyMeasurement measurement) async {
+    final response = await _client
+        .from('body_measurements')
+        .insert(measurement.toMap())
+        .select()
+        .single();
+
+    return BodyMeasurement.fromMap(response);
+  }
+
+  // Read all body measurements for current user
+  Future<List<BodyMeasurement>> getBodyMeasurements() async {
+    final userId = currentUser?.id;
+    if (userId == null) return [];
+
+    final response = await _client
+        .from('body_measurements')
+        .select()
+        .eq('user_id', userId)
+        .order('measurement_date', ascending: false);
+
+    return response
+        .map((item) => BodyMeasurement.fromMap(item))
+        .toList();
+  }
+
+  // Read body measurements in a date range
+  Future<List<BodyMeasurement>> getBodyMeasurementsByDateRange(DateTime startDate, DateTime endDate) async {
+    final userId = currentUser?.id;
+    if (userId == null) return [];
+
+    final startDateStr = '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
+    final endDateStr = '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
+
+    final response = await _client
+        .from('body_measurements')
+        .select()
+        .eq('user_id', userId)
+        .gte('measurement_date', startDateStr)
+        .lte('measurement_date', endDateStr)
+        .order('measurement_date', ascending: true);
+
+    return response
+        .map((item) => BodyMeasurement.fromMap(item))
+        .toList();
+  }
+
+  // Get most recent body measurement
+  Future<BodyMeasurement?> getLatestBodyMeasurement() async {
+    final userId = currentUser?.id;
+    if (userId == null) return null;
+
+    final response = await _client
+        .from('body_measurements')
+        .select()
+        .eq('user_id', userId)
+        .order('measurement_date', ascending: false)
+        .limit(1);
+
+    if (response.isEmpty) return null;
+    return BodyMeasurement.fromMap(response.first);
+  }
+
+  // Update
+  Future<BodyMeasurement> updateBodyMeasurement(BodyMeasurement measurement) async {
+    final response = await _client
+        .from('body_measurements')
+        .update(measurement.toMap())
+        .eq('id', measurement.id!)
+        .select()
+        .single();
+
+    return BodyMeasurement.fromMap(response);
+  }
+
+  // Delete
+  Future<void> deleteBodyMeasurement(String id) async {
+    await _client.from('body_measurements').delete().eq('id', id);
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'providers/auth_provider.dart';
 import 'providers/workout_provider.dart';
 import 'screens/home_screen.dart';
@@ -19,6 +20,9 @@ const String supabaseAnonKey = String.fromEnvironment(
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Korean locale for date formatting
+  await initializeDateFormatting('ko_KR', null);
 
   // Initialize Supabase
   await Supabase.initialize(

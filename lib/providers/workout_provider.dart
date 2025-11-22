@@ -179,4 +179,54 @@ class WorkoutProvider with ChangeNotifier {
       return [];
     }
   }
+
+  // Get dashboard data for charts
+  Future<Map<String, dynamic>> getDashboardData() async {
+    try {
+      final now = DateTime.now();
+
+      // 최근 7일간의 데이터 조회
+      final startDate = now.subtract(const Duration(days: 6));
+      final workouts = await _supabaseService.getWorkoutsByDateRange(startDate, now);
+
+      // 요일별 운동시간 집계
+      final weeklyMinutes = <String, int>{
+        '월': 0,
+        '화': 0,
+        '수': 0,
+        '목': 0,
+        '금': 0,
+        '토': 0,
+        '일': 0,
+      };
+
+      final weekdays = ['월', '화', '수', '목', '금', '토', '일'];
+
+      for (var workout in workouts) {
+        final weekday = weekdays[workout.date.weekday - 1];
+        final minutes = [8, 9, 10][workout.hashCode % 3];
+        weeklyMinutes[weekday] = (weeklyMinutes[weekday] ?? 0) + minutes;
+      }
+
+      // 운동종류별 비중 집계 (이번 달 전체)
+      final monthWorkouts = await getMonthlyWorkouts();
+      final exerciseTypes = <String, int>{};
+
+      for (var workout in monthWorkouts) {
+        final bodyPart = workout.bodyPart;
+        exerciseTypes[bodyPart] = (exerciseTypes[bodyPart] ?? 0) + 1;
+      }
+
+      return {
+        'weeklyMinutes': weeklyMinutes,
+        'exerciseTypes': exerciseTypes,
+      };
+    } catch (e) {
+      debugPrint('Error getting dashboard data: $e');
+      return {
+        'weeklyMinutes': <String, int>{},
+        'exerciseTypes': <String, int>{},
+      };
+    }
+  }
 }

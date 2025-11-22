@@ -3,8 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/workout.dart';
+import '../models/body_measurement.dart';
 import '../providers/auth_provider.dart';
 import '../providers/workout_provider.dart';
+import '../screens/dashboard_screen.dart';
+import '../screens/chat_screen.dart';
+import '../services/supabase_service.dart';
 import '../widgets/workout_list_item.dart';
 
 class NewHomeScreen extends StatefulWidget {
@@ -398,42 +402,369 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   }
 
   Widget _buildDashboardContent() {
-    return Container(
-      color: Colors.grey[50],
-      child: const Center(
-        child: Text(
-          '대시보드 구현중',
-          style: TextStyle(
-              fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
-      ),
-    );
+    return const DashboardScreen();
   }
 
   Widget _buildChatContent() {
-    return Container(
-      color: Colors.grey[50],
-      child: const Center(
-        child: Text(
-          '채팅 구현중',
-          style: TextStyle(
-              fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
-      ),
-    );
+    return const ChatScreen();
   }
 
   Widget _buildMyContent() {
     return Container(
       color: Colors.grey[50],
-      child: const Center(
-        child: Text(
-          'My 구현중',
-          style: TextStyle(
-              fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildBodyMeasurementCard(),
+              const SizedBox(height: 16),
+              _buildRecentMeasurements(),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildBodyMeasurementCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.monitor_weight_outlined,
+                color: Color(0xFF00E676),
+                size: 28,
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                '체중 기록하기',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            '오늘의 체중과 키를 기록해보세요',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () => _showAddMeasurementDialog(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00E676),
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              '체중 기록 추가',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentMeasurements() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '최근 기록',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          FutureBuilder<List<BodyMeasurement>>(
+            future: SupabaseService().getBodyMeasurements(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Text(
+                      '아직 기록이 없습니다\n위에서 체중을 추가해보세요',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              final measurements = snapshot.data!.take(5).toList();
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: measurements.length,
+                separatorBuilder: (context, index) => const Divider(),
+                itemBuilder: (context, index) {
+                  final measurement = measurements[index];
+                  final dateStr = DateFormat('yyyy년 MM월 dd일', 'ko_KR')
+                      .format(measurement.measurementDate);
+
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF00E676).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.monitor_weight,
+                        color: Color(0xFF00E676),
+                      ),
+                    ),
+                    title: Text(
+                      '$dateStr',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '체중: ${measurement.weight}kg'
+                      '${measurement.height != null ? ' · 키: ${measurement.height}cm' : ''}'
+                      '${measurement.bmi != null ? ' · BMI: ${measurement.bmi!.toStringAsFixed(1)}' : ''}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.grey),
+                      onPressed: () => _deleteMeasurement(context, measurement),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showAddMeasurementDialog(BuildContext context) async {
+    final weightController = TextEditingController();
+    final heightController = TextEditingController();
+    final notesController = TextEditingController();
+    DateTime selectedDate = DateTime.now();
+
+    return showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('체중 기록 추가'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: weightController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: '체중 (kg) *',
+                    hintText: '예: 70.5',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: heightController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: '키 (cm)',
+                    hintText: '예: 175',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: notesController,
+                  decoration: const InputDecoration(
+                    labelText: '메모',
+                    hintText: '운동 후 측정, 아침 공복 등',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setDialogState(() {
+                        selectedDate = picked;
+                      });
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: '측정 날짜',
+                      border: OutlineInputBorder(),
+                      suffixIcon: Icon(Icons.calendar_today),
+                    ),
+                    child: Text(
+                      DateFormat('yyyy년 MM월 dd일', 'ko_KR').format(selectedDate),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('취소'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (weightController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('체중을 입력해주세요')),
+                  );
+                  return;
+                }
+
+                try {
+                  final weight = double.parse(weightController.text);
+                  final height = heightController.text.isNotEmpty
+                      ? double.parse(heightController.text)
+                      : null;
+                  final bmi = BodyMeasurement.calculateBMI(weight, height);
+
+                  final measurement = BodyMeasurement(
+                    userId: SupabaseService().currentUser?.id,
+                    measurementDate: selectedDate,
+                    weight: weight,
+                    height: height,
+                    bmi: bmi,
+                    notes: notesController.text.isEmpty ? null : notesController.text,
+                  );
+
+                  await SupabaseService().insertBodyMeasurement(measurement);
+
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('체중 기록이 추가되었습니다')),
+                    );
+                    setState(() {}); // Refresh the UI
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('오류가 발생했습니다: $e')),
+                    );
+                  }
+                }
+              },
+              child: const Text('추가'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteMeasurement(BuildContext context, BodyMeasurement measurement) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('기록 삭제'),
+        content: const Text('이 체중 기록을 삭제하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await SupabaseService().deleteBodyMeasurement(measurement.id!);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('기록이 삭제되었습니다')),
+          );
+          setState(() {}); // Refresh the UI
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('오류가 발생했습니다: $e')),
+          );
+        }
+      }
+    }
   }
 
   Widget _buildSearchBar() {
