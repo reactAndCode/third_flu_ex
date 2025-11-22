@@ -124,42 +124,41 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
           ),
         ),
         actions: [
-          if (_currentIndex == 1) // 운동 탭일 때만 로그아웃 버튼 표시
-            Consumer<AuthProvider>(
-              builder: (context, authProvider, child) {
-                return TextButton(
-                  onPressed: () async {
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('로그아웃'),
-                        content: const Text('로그아웃 하시겠습니까?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('취소'),
-                          ),
-                          ElevatedButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text('확인'),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirmed == true && context.mounted) {
-                      await context.read<AuthProvider>().signOut();
-                    }
-                  },
-                  child: const Text(
-                    '로그아웃',
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontSize: 14,
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              return TextButton(
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('로그아웃'),
+                      content: const Text('로그아웃 하시겠습니까?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('취소'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('확인'),
+                        ),
+                      ],
                     ),
+                  );
+                  if (confirmed == true && context.mounted) {
+                    await context.read<AuthProvider>().signOut();
+                  }
+                },
+                child: const Text(
+                  '로그아웃',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 14,
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
+          ),
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               final email = authProvider.user?.email ?? '';

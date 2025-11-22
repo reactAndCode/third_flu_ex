@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'providers/auth_provider.dart';
 import 'providers/workout_provider.dart';
-import 'screens/home_screen.dart';
+import 'screens/workout_main_screen.dart';
 import 'screens/new_home_screen.dart';
 import 'screens/login_screen.dart';
 

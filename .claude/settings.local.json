@@ -16,7 +16,9 @@
       "Bash(git push:*)",
       "Bash(git reset:*)",
       "Bash(copy buildappoutputsflutter-apkapp-release.apk workouts_v1_5.apk)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(copy:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []
