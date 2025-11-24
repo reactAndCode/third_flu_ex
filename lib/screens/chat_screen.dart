@@ -105,6 +105,7 @@ class _ChatScreenState extends State<ChatScreen> {
       color: const Color(0xFF1A2F1A), // 다크 그린 배경
       child: Column(
         children: [
+          _buildTrainerHeader(),
           _buildAttachmentSection(),
           Expanded(
             child: ListView.builder(
@@ -117,6 +118,55 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           _buildInputArea(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrainerHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Color(0xFF2C3E2C), // 다크 그린
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              // 뒤로가기 (현재는 탭 네비게이션이므로 비활성화)
+            },
+          ),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFB74D),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(
+              Icons.person,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              '김민준 트레이너',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onPressed: () {
+              // 메뉴
+            },
+          ),
         ],
       ),
     );

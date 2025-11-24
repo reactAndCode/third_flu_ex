@@ -310,13 +310,16 @@ class ChatService {
 
   // Search users by nickname
   Future<List<UserProfile>> searchUsers(String query) async {
-    if (query.isEmpty) return [];
-
-    final response = await _client
-        .from('user_profiles')
-        .select()
-        .ilike('nickname', '%$query%')
-        .limit(20);
+    final response = query.isEmpty
+        ? await _client
+            .from('user_profiles')
+            .select()
+            .limit(20)
+        : await _client
+            .from('user_profiles')
+            .select()
+            .ilike('nickname', '%$query%')
+            .limit(20);
 
     return response.map((item) => UserProfile.fromMap(item)).toList();
   }
