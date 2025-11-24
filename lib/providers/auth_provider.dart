@@ -2,9 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
+import '../services/chat_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final SupabaseService _supabaseService = SupabaseService();
+  final ChatService _chatService = ChatService();
 
   User? _user;
   bool _isLoading = false;
@@ -38,6 +40,21 @@ class AuthProvider extends ChangeNotifier {
     try {
       final response = await _supabaseService.signUp(email, password);
       _user = response.user;
+
+      // Create user profile automatically
+      if (_user != null) {
+        try {
+          final nickname = email.split('@')[0]; // Use email prefix as default nickname
+          await _chatService.upsertUserProfile(
+            userId: _user!.id,
+            nickname: nickname,
+          );
+        } catch (profileError) {
+          debugPrint('Error creating user profile: $profileError');
+          // Don't fail signup if profile creation fails
+        }
+      }
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -57,6 +74,24 @@ class AuthProvider extends ChangeNotifier {
     try {
       final response = await _supabaseService.signIn(email, password);
       _user = response.user;
+
+      // Create user profile if it doesn't exist
+      if (_user != null) {
+        try {
+          final existingProfile = await _chatService.getUserProfile(_user!.id);
+          if (existingProfile == null) {
+            final nickname = email.split('@')[0];
+            await _chatService.upsertUserProfile(
+              userId: _user!.id,
+              nickname: nickname,
+            );
+          }
+        } catch (profileError) {
+          debugPrint('Error checking/creating user profile: $profileError');
+          // Don't fail signin if profile check fails
+        }
+      }
+
       _isLoading = false;
       notifyListeners();
       return true;

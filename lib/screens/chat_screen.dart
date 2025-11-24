@@ -188,7 +188,8 @@ class _ChatScreenState extends State<ChatScreen> {
           Icon(
             icon,
             size: 32,
-            color: color == Colors.white ? const Color(0xFFD4AF37) : Colors.white,
+            color:
+                color == Colors.white ? const Color(0xFFD4AF37) : Colors.white,
           ),
           const SizedBox(height: 8),
           Padding(
@@ -255,8 +256,9 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           if (!message.isUser) const SizedBox(height: 8),
           Row(
-            mainAxisAlignment:
-                message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: message.isUser
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (message.isUser) ...[
@@ -271,7 +273,8 @@ class _ChatScreenState extends State<ChatScreen> {
               ],
               Flexible(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: message.isUser
                         ? const Color(0xFFA5D6A7) // 연한 초록색

@@ -6,8 +6,9 @@ import '../models/workout.dart';
 import '../models/body_measurement.dart';
 import '../providers/auth_provider.dart';
 import '../providers/workout_provider.dart';
+import '../providers/chat_provider.dart';
 import '../screens/dashboard_screen.dart';
-import '../screens/chat_screen.dart';
+import '../screens/chat_list_screen.dart';
 import '../services/supabase_service.dart';
 import '../widgets/workout_list_item.dart';
 
@@ -405,7 +406,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   }
 
   Widget _buildChatContent() {
-    return const ChatScreen();
+    return const ChatListScreen();
   }
 
   Widget _buildMyContent() {
@@ -417,6 +418,8 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildProfileCard(),
+              const SizedBox(height: 16),
               _buildBodyMeasurementCard(),
               const SizedBox(height: 16),
               _buildRecentMeasurements(),
@@ -1362,5 +1365,248 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
     if (confirmed == true && context.mounted) {
       context.read<WorkoutProvider>().deleteMockWorkout(id);
     }
+  }
+
+  // 프로필 카드
+  Widget _buildProfileCard() {
+    final chatProvider = context.watch<ChatProvider>();
+    final authProvider = context.watch<AuthProvider>();
+    final currentUserId = authProvider.user?.id;
+
+    if (currentUserId == null) {
+      return const SizedBox.shrink();
+    }
+
+    return FutureBuilder(
+      future: chatProvider.getUserProfile(currentUserId),
+      builder: (context, snapshot) {
+        final profile = snapshot.data;
+        final nickname = profile?.nickname ?? authProvider.user?.email?.split('@')[0] ?? '사용자';
+        final avatarUrl = profile?.avatarUrl;
+        final statusMessage = profile?.statusMessage;
+
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 4,
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  // 아바타
+                  CircleAvatar(
+                    radius: 40,
+                    backgroundColor: Colors.blue[300],
+                    backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                        ? NetworkImage(avatarUrl)
+                        : null,
+                    child: avatarUrl == null || avatarUrl.isEmpty
+                        ? Text(
+                            nickname.isNotEmpty ? nickname[0].toUpperCase() : '?',
+                            style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 20),
+
+                  // 프로필 정보
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          nickname,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        if (statusMessage != null && statusMessage.isNotEmpty)
+                          Text(
+                            statusMessage,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        else
+                          Text(
+                            '상태 메시지를 입력해보세요',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // 프로필 편집 버튼
+              ElevatedButton.icon(
+                onPressed: () => _showEditProfileDialog(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00E676),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                icon: const Icon(Icons.edit),
+                label: const Text(
+                  '프로필 편집',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // 프로필 편집 다이얼로그
+  Future<void> _showEditProfileDialog(BuildContext context) async {
+    final chatProvider = context.read<ChatProvider>();
+    final authProvider = context.read<AuthProvider>();
+    final currentUserId = authProvider.user?.id;
+
+    if (currentUserId == null) return;
+
+    // 현재 프로필 가져오기
+    final currentProfile = await chatProvider.getUserProfile(currentUserId);
+
+    final nicknameController = TextEditingController(
+      text: currentProfile?.nickname ?? authProvider.user?.email?.split('@')[0] ?? '',
+    );
+    final avatarUrlController = TextEditingController(
+      text: currentProfile?.avatarUrl ?? '',
+    );
+    final statusMessageController = TextEditingController(
+      text: currentProfile?.statusMessage ?? '',
+    );
+
+    if (!context.mounted) return;
+
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('프로필 편집'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nicknameController,
+                decoration: const InputDecoration(
+                  labelText: '닉네임 *',
+                  hintText: '닉네임을 입력하세요',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: avatarUrlController,
+                decoration: const InputDecoration(
+                  labelText: '아바타 이미지 URL',
+                  hintText: 'https://example.com/avatar.jpg',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.image),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: statusMessageController,
+                decoration: const InputDecoration(
+                  labelText: '상태 메시지',
+                  hintText: '나를 표현하는 한마디',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.chat_bubble_outline),
+                ),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '* 닉네임은 채팅에서 표시됩니다',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (nicknameController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('닉네임을 입력해주세요')),
+                );
+                return;
+              }
+
+              try {
+                await chatProvider.upsertUserProfile(
+                  userId: currentUserId,
+                  nickname: nicknameController.text.trim(),
+                  avatarUrl: avatarUrlController.text.trim().isEmpty
+                      ? null
+                      : avatarUrlController.text.trim(),
+                  statusMessage: statusMessageController.text.trim().isEmpty
+                      ? null
+                      : statusMessageController.text.trim(),
+                );
+
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('프로필이 업데이트되었습니다')),
+                  );
+                  setState(() {}); // Refresh the UI
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('오류가 발생했습니다: $e')),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00E676),
+            ),
+            child: const Text('저장'),
+          ),
+        ],
+      ),
+    );
   }
 }
