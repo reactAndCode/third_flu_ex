@@ -815,7 +815,7 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
           final matchesSearch = query.isEmpty ||
               workout.name.toLowerCase().contains(query.toLowerCase());
           final matchesType = _selectedType == '전체' ||
-              workout.bodyPart.contains(_selectedType);
+              workout.bodyPart.trim() == _selectedType;
           return matchesSearch && matchesType;
         }).toList();
       }
