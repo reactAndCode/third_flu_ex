@@ -27,7 +27,36 @@ flutter build apk
 
 # Android 릴리즈 빌드
 flutter build apk --release
+
+# 웹 빌드 (Vercel 배포용)
+flutter build web --release
+
+# 자동 빌드 스크립트 실행
+# Windows: build.bat
+# Git Bash/Linux: ./build.sh
 ```
+
+### 웹 빌드 및 배포
+```bash
+# 1. 웹 빌드
+flutter build web --release
+
+# 2. Git에 빌드 파일 추가
+git add build/web
+
+# 3. 커밋 및 푸시
+git commit -m "build: Update web build"
+git push origin main
+
+# 자동화된 빌드 (권장)
+# Windows: build.bat 더블클릭 또는
+build.bat
+
+# Git Bash/Linux:
+./build.sh
+```
+
+**참고**: Flutter SDK 설치가 필요합니다. 자세한 내용은 `FLUTTER_SETUP.md` 참조
 
 ### 테스트
 ```bash
