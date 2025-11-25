@@ -51,6 +51,9 @@ dependencies:
   # Image picker
   image_picker: ^1.0.7
 
+  # Translator
+  translator: ^1.0.0
+
   # Charts
   fl_chart: 0.60.0
 

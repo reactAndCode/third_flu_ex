@@ -1,7 +1,11 @@
 import 'dart:math';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:translator/translator.dart';
 import '../models/workout.dart';
 import '../models/body_measurement.dart';
 import '../providers/auth_provider.dart';
@@ -22,6 +26,16 @@ class NewHomeScreen extends StatefulWidget {
 class _NewHomeScreenState extends State<NewHomeScreen> {
   int _currentIndex = 0; // 홈을 기본 탭으로 설정
   final TextEditingController _searchController = TextEditingController();
+
+  // 번역 관련 컨트롤러
+  final TextEditingController _koreanController = TextEditingController();
+  final TextEditingController _englishController = TextEditingController();
+  final GoogleTranslator _translator = GoogleTranslator();
+  bool _isTranslating = false;
+
+  // 이미지 생성 관련
+  String? _generatedImageUrl;
+  bool _isGeneratingImage = false;
 
   // 운동 관련 명언 20개
   static const List<String> _motivationalQuotes = [
@@ -90,6 +104,8 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _koreanController.dispose();
+    _englishController.dispose();
     super.dispose();
   }
 
@@ -419,6 +435,8 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildProfileCard(),
+              const SizedBox(height: 16),
+              _buildTranslatorCard(),
               const SizedBox(height: 16),
               _buildBodyMeasurementCard(),
               const SizedBox(height: 16),
@@ -1608,5 +1626,342 @@ class _NewHomeScreenState extends State<NewHomeScreen> {
         ],
       ),
     );
+  }
+
+  // 번역 카드
+  Widget _buildTranslatorCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.translate,
+                color: Color(0xFF00E676),
+                size: 28,
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                '한영 번역기',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            '한글을 영어로 번역합니다',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 한글 입력 영역
+          TextField(
+            controller: _koreanController,
+            maxLines: 5,
+            decoration: const InputDecoration(
+              labelText: '한글 입력',
+              hintText: '번역할 한글을 입력하세요',
+              border: OutlineInputBorder(),
+              alignLabelWithHint: true,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // 번역 버튼
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _isTranslating ? null : _translateText,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00E676),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  icon: _isTranslating
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Icon(Icons.translate),
+                  label: Text(
+                    _isTranslating ? '번역 중...' : '번역하기',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // 영어 출력 영역
+          TextField(
+            controller: _englishController,
+            maxLines: 5,
+            readOnly: true,
+            decoration: const InputDecoration(
+              labelText: '영어 번역 결과',
+              hintText: '번역된 결과가 여기에 표시됩니다',
+              border: OutlineInputBorder(),
+              alignLabelWithHint: true,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // 복사 버튼
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _englishController.text.isEmpty ? null : _copyToClipboard,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF00E676),
+                    minimumSize: const Size(double.infinity, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    side: BorderSide(
+                      color: _englishController.text.isEmpty
+                          ? Colors.grey
+                          : const Color(0xFF00E676),
+                    ),
+                  ),
+                  icon: const Icon(Icons.copy),
+                  label: const Text(
+                    '영어 결과 복사',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // 이미지 생성 버튼
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _englishController.text.isEmpty || _isGeneratingImage
+                      ? null
+                      : _generateImage,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  icon: _isGeneratingImage
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Icon(Icons.image),
+                  label: Text(
+                    _isGeneratingImage ? '이미지 생성 중...' : '이미지 생성',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // 생성된 이미지 표시
+          if (_generatedImageUrl != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  _generatedImageUrl!,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      height: 300,
+                      alignment: Alignment.center,
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                            : null,
+                      ),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 300,
+                      alignment: Alignment.center,
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline, size: 48, color: Colors.red),
+                          SizedBox(height: 8),
+                          Text('이미지를 불러올 수 없습니다'),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // 번역 함수
+  Future<void> _translateText() async {
+    if (_koreanController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('번역할 한글을 입력해주세요')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isTranslating = true;
+      _englishController.clear();
+    });
+
+    try {
+      final translation = await _translator.translate(
+        _koreanController.text,
+        from: 'ko',
+        to: 'en',
+      );
+
+      setState(() {
+        _englishController.text = translation.text;
+        _isTranslating = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isTranslating = false;
+      });
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('번역 중 오류가 발생했습니다: $e')),
+        );
+      }
+    }
+  }
+
+  // 클립보드 복사 함수
+  Future<void> _copyToClipboard() async {
+    if (_englishController.text.isEmpty) return;
+
+    try {
+      await Clipboard.setData(ClipboardData(text: _englishController.text));
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('영어 번역 결과가 클립보드에 복사되었습니다'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('복사 중 오류가 발생했습니다: $e')),
+        );
+      }
+    }
+  }
+
+  // Pollinations.ai를 사용한 이미지 생성 함수
+  Future<void> _generateImage() async {
+    if (_englishController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('먼저 텍스트를 번역해주세요')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isGeneratingImage = true;
+    });
+
+    try {
+      // Pollinations.ai는 URL만 생성하면 자동으로 이미지를 생성합니다
+      final prompt = Uri.encodeComponent(_englishController.text.trim());
+      final imageUrl = 'https://image.pollinations.ai/prompt/$prompt?width=1024&height=1024&nologo=true&seed=${DateTime.now().millisecondsSinceEpoch}';
+
+      // 약간의 딜레이 후 이미지 표시 (이미지 생성 시간)
+      await Future.delayed(const Duration(seconds: 2));
+
+      setState(() {
+        _generatedImageUrl = imageUrl;
+        _isGeneratingImage = false;
+      });
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이미지가 생성되었습니다!')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isGeneratingImage = false;
+      });
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('이미지 생성 중 오류가 발생했습니다: $e'),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 }

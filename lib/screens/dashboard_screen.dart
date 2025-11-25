@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 import '../providers/workout_provider.dart';
 import '../services/supabase_service.dart';
 import '../models/body_measurement.dart';
+import 'dart:typed_data';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -17,11 +21,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<BodyMeasurement> _bodyMeasurements = [];
   bool _isLoading = true;
   final _supabaseService = SupabaseService();
+  final TextEditingController _promptController = TextEditingController();
+  Uint8List? _aiImage;
+  bool _isGeneratingImage = false;
 
   @override
   void initState() {
     super.initState();
     _loadDashboardData();
+  }
+
+  @override
+  void dispose() {
+    _promptController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadDashboardData() async {
@@ -35,7 +48,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Load body measurements for the last 7 days
     final now = DateTime.now();
     final sevenDaysAgo = now.subtract(const Duration(days: 6));
-    final measurements = await _supabaseService.getBodyMeasurementsByDateRange(sevenDaysAgo, now);
+    final measurements = await _supabaseService.getBodyMeasurementsByDateRange(
+        sevenDaysAgo, now);
 
     setState(() {
       _dashboardData = data;
@@ -70,6 +84,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _buildSectionTitle('체중 및 BMI 변화'),
               const SizedBox(height: 16),
               _buildWeightBMILineChart(),
+              const SizedBox(height: 16),
+              _buildAIImageSection(),
               const SizedBox(height: 24),
             ],
           ),
@@ -90,7 +106,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildWeeklyBarChart() {
-    final weeklyData = _dashboardData?['weeklyMinutes'] as Map<String, int>? ?? {};
+    final weeklyData =
+        _dashboardData?['weeklyMinutes'] as Map<String, int>? ?? {};
 
     return Container(
       height: 300,
@@ -109,7 +126,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: BarChart(
         BarChartData(
           alignment: BarChartAlignment.spaceAround,
-          maxY: (weeklyData.values.isEmpty ? 100 : weeklyData.values.reduce((a, b) => a > b ? a : b)).toDouble() * 1.2,
+          maxY: (weeklyData.values.isEmpty
+                      ? 100
+                      : weeklyData.values.reduce((a, b) => a > b ? a : b))
+                  .toDouble() *
+              1.2,
           barTouchData: BarTouchData(
             enabled: true,
             touchTooltipData: BarTouchTooltipData(
@@ -207,7 +228,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildExerciseDonutChart() {
-    final exerciseData = _dashboardData?['exerciseTypes'] as Map<String, int>? ?? {};
+    final exerciseData =
+        _dashboardData?['exerciseTypes'] as Map<String, int>? ?? {};
 
     if (exerciseData.isEmpty) {
       return Container(
@@ -267,10 +289,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               PieChartData(
                 sectionsSpace: 2,
                 centerSpaceRadius: 50,
-                sections: exerciseData.entries.toList().asMap().entries.map((entry) {
+                sections:
+                    exerciseData.entries.toList().asMap().entries.map((entry) {
                   final index = entry.key;
                   final data = entry.value;
-                  final percentage = (data.value / total * 100).toStringAsFixed(1);
+                  final percentage =
+                      (data.value / total * 100).toStringAsFixed(1);
 
                   return PieChartSectionData(
                     color: colors[index % colors.length],
@@ -292,7 +316,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: exerciseData.entries.toList().asMap().entries.map((entry) {
+              children:
+                  exerciseData.entries.toList().asMap().entries.map((entry) {
                 final index = entry.key;
                 final data = entry.value;
                 return Padding(
@@ -345,7 +370,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         } else {
           bmiData.add(0); // BMI가 없으면 0으로 표시
         }
-        dateLabels.add('${measurement.measurementDate.month}/${measurement.measurementDate.day}');
+        dateLabels.add(
+            '${measurement.measurementDate.month}/${measurement.measurementDate.day}');
       }
     } else {
       // 데이터가 없을 때 샘플 데이터 표시
@@ -411,7 +437,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        if (value.toInt() >= 0 && value.toInt() < dateLabels.length) {
+                        if (value.toInt() >= 0 &&
+                            value.toInt() < dateLabels.length) {
                           return Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
@@ -453,14 +480,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 minX: 0,
                 maxX: (weightData.length - 1).toDouble(),
                 minY: hasData
-                    ? ([...weightData, ...bmiData].reduce((a, b) => a < b ? a : b) * 0.95)
+                    ? ([...weightData, ...bmiData]
+                            .reduce((a, b) => a < b ? a : b) *
+                        0.95)
                     : 20,
                 maxY: hasData
-                    ? ([...weightData, ...bmiData].reduce((a, b) => a > b ? a : b) * 1.05)
+                    ? ([...weightData, ...bmiData]
+                            .reduce((a, b) => a > b ? a : b) *
+                        1.05)
                     : 75,
                 lineBarsData: [
                   LineChartBarData(
-                    spots: weightData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value)).toList(),
+                    spots: weightData
+                        .asMap()
+                        .entries
+                        .map((e) => FlSpot(e.key.toDouble(), e.value))
+                        .toList(),
                     isCurved: true,
                     color: const Color(0xFF2196F3),
                     barWidth: 3,
@@ -472,7 +507,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   LineChartBarData(
-                    spots: bmiData.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value)).toList(),
+                    spots: bmiData
+                        .asMap()
+                        .entries
+                        .map((e) => FlSpot(e.key.toDouble(), e.value))
+                        .toList(),
                     isCurved: true,
                     color: const Color(0xFFFF9800),
                     barWidth: 3,
@@ -519,5 +558,256 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildAIImageSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'AI 이미지 생성',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _promptController,
+            decoration: const InputDecoration(
+              hintText: '프롬프트를 입력하세요',
+              border: OutlineInputBorder(),
+            ),
+            minLines: 1,
+            maxLines: 3,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              ElevatedButton(
+                onPressed: _isGeneratingImage ? null : _generateAIImage,
+                child: Text(_isGeneratingImage ? '생성중...' : '생성'),
+              ),
+              const SizedBox(width: 12),
+              if (_aiImage != null)
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _aiImage = null;
+                    });
+                  },
+                  child: const Text('초기화'),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_aiImage != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.memory(
+                _aiImage!,
+                height: 220,
+                fit: BoxFit.cover,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _generateAIImage() async {
+    final prompt = _promptController.text.trim();
+    if (prompt.isEmpty) return;
+    setState(() {
+      _isGeneratingImage = true;
+    });
+    try {
+      final provider =
+          dotenv.env['IMAGE_API_PROVIDER']?.toLowerCase() ?? 'automatic1111';
+      if (provider == 'automatic1111' || provider == 'a1111') {
+        final url = dotenv.env['IMAGE_API_URL'] ??
+            'http://localhost:7860/sdapi/v1/txt2img';
+        final resp = await http.post(
+          Uri.parse(url),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'prompt': prompt,
+            'width': 1024,
+            'height': 1024,
+            'steps': 24,
+            'cfg_scale': 6.5,
+            'sampler_name': 'DPM++ 2M SDE Karras',
+          }),
+        );
+        if (resp.statusCode == 200) {
+          final data = jsonDecode(resp.body);
+          final b64 = (data['images'] as List).first as String;
+          final bytes = base64Decode(b64);
+          setState(() {
+            _aiImage = bytes;
+            _isGeneratingImage = false;
+          });
+        } else {
+          setState(() {
+            _isGeneratingImage = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('이미지 생성 실패')),
+          );
+        }
+      } else if (provider == 'comfyui') {
+        final comfyPromptUrl =
+            dotenv.env['COMFYUI_URL'] ?? 'http://localhost:8188/prompt';
+        final baseUri = Uri.parse(comfyPromptUrl);
+        final comfyBase =
+            '${baseUri.scheme}://${baseUri.host}${baseUri.hasPort ? ':${baseUri.port}' : ''}';
+        final resp = await http.post(
+          Uri.parse(comfyPromptUrl),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'client_id': 'flutter_app',
+            'prompt': {
+              '0': {
+                'class_type': 'CheckpointLoaderSimple',
+                'inputs': {
+                  'ckpt_name':
+                      dotenv.env['COMFYUI_MODEL'] ?? 'sdxl_base_1.0.safetensors'
+                }
+              },
+              '1': {
+                'class_type': 'CLIPTextEncode',
+                'inputs': {
+                  'text': prompt,
+                  'clip': ['0', 1]
+                }
+              },
+              '2': {
+                'class_type': 'CLIPTextEncode',
+                'inputs': {
+                  'text': '',
+                  'clip': ['0', 1]
+                }
+              },
+              '3': {
+                'class_type': 'EmptyLatentImage',
+                'inputs': {'batch_size': 1, 'width': 1024, 'height': 1024}
+              },
+              '4': {
+                'class_type': 'KSampler',
+                'inputs': {
+                  'seed': 0,
+                  'steps': 24,
+                  'cfg': 6.5,
+                  'sampler_name': 'dpmpp_2m_sde',
+                  'scheduler': 'karras',
+                  'denoise': 1.0,
+                  'model': ['0', 0],
+                  'positive': ['1', 0],
+                  'negative': ['2', 0],
+                  'latent_image': ['3', 0]
+                }
+              },
+              '5': {
+                'class_type': 'VAEDecode',
+                'inputs': {
+                  'samples': ['4', 0],
+                  'vae': ['0', 2]
+                }
+              }
+            }
+          }),
+        );
+        if (resp.statusCode == 200) {
+          final data = jsonDecode(resp.body);
+          final promptId = data['prompt_id'] ?? data['id'] ?? '';
+          if (promptId is String && promptId.isNotEmpty) {
+            Uint8List? bytes;
+            for (int i = 0; i < 30; i++) {
+              final h =
+                  await http.get(Uri.parse('$comfyBase/history/$promptId'));
+              if (h.statusCode == 200) {
+                final hist = jsonDecode(h.body);
+                if (hist is Map && hist.containsKey('outputs')) {
+                  final outputs = hist['outputs'] as Map;
+                  for (final v in outputs.values) {
+                    final imgs = v['images'];
+                    if (imgs is List && imgs.isNotEmpty) {
+                      final img = imgs.first;
+                      final filename = img['filename'];
+                      final subfolder = img['subfolder'] ?? '';
+                      final type = img['type'] ?? 'output';
+                      final viewUrl = Uri.parse(
+                          '$comfyBase/view?filename=$filename&subfolder=$subfolder&type=$type');
+                      final vr = await http.get(viewUrl);
+                      if (vr.statusCode == 200) {
+                        bytes = vr.bodyBytes;
+                        break;
+                      }
+                    }
+                  }
+                }
+              }
+              if (bytes != null) break;
+              await Future.delayed(const Duration(seconds: 1));
+            }
+            if (bytes != null) {
+              setState(() {
+                _aiImage = bytes;
+                _isGeneratingImage = false;
+              });
+            } else {
+              setState(() {
+                _isGeneratingImage = false;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('ComfyUI 결과 없음')),
+              );
+            }
+          } else {
+            setState(() {
+              _isGeneratingImage = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('ComfyUI 요청 실패')),
+            );
+          }
+        } else {
+          setState(() {
+            _isGeneratingImage = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('ComfyUI 요청 실패')),
+          );
+        }
+      } else {
+        setState(() {
+          _isGeneratingImage = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('지원되지 않는 이미지 API 제공자')),
+        );
+      }
+    } catch (_) {
+      setState(() {
+        _isGeneratingImage = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('로컬 이미지 API에 연결할 수 없습니다')),
+      );
+    }
   }
 }
